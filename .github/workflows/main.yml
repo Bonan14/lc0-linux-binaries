@@ -1,0 +1,86 @@
+name: Multi-Platform Meson Build with CUDA, ONNX, and BLAS
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true  # Ensure submodules are checked out
+
+      - name: Update submodules
+        run: |
+         git submodule sync --recursive
+         git submodule update --init --recursive
+        
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson 
+          sudo apt-get install -y ninja-build 
+          sudo apt-get install -y libblas-dev 
+          sudo apt-get install -y libopenblas-dev
+          # Install CUDA
+          # sudo apt-get install -y nvidia-cuda-toolkit
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+            choco install meson
+            choco install cuda 
+            #choco install ninja --installargs 'ADD_NINJA_TO_PATH=System' -y
+            Start-Process PowerShell -Verb RunAs
+
+      - name: Configure Meson(Windows)
+        if: runner.os == 'Windows'
+        run: |
+            IF [ '${{ matrix.os.meson }}' == 'meson' ]; then 
+             meson setup --buildtype release build -Dblas=true -Dcudnn=false
+             FI
+
+      - name: Configure Meson(Linux)      
+        if: runner.os == 'Linux'
+        run: |
+            meson setup --buildtype release builddir -Dblas=true -Dcudnn=false
+
+      - name: Build with Meson(Windows)
+        if: runner.os == 'Windows'
+        run: |
+            ninja -C builddir
+      - name: Build with Meson(Linux)
+        if: runner.os == 'Linux'
+        run: |
+            ninja -C builddir
+
+      - name: Download Network
+        run: |
+         cd builddir
+         curl -L https://training.lczero.org/get_network?sha=195b450999e874d07aea2c09fd0db5eff9d4441ec1ad5a60a140fe8ea94c4f3a -o T79.pb.gz
+
+      - name: Update file timestamp
+        run: |
+         touch -t 201801010000.00 T79.pb.gz
+
+      - name: Run tests
+        run: ./builddir/lc0 benchmark --num-positions=7  --task-workers=3 --minibatch-size=7 --threads=32
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: lc0-${{ matrix.os }}
+          path: builddir
