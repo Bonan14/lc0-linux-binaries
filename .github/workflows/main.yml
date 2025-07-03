@@ -82,7 +82,7 @@ jobs:
       - name: Configure Meson
         run: |
           # Define base Meson command
-          MESON_CMD="meson setup --buildtype release build"
+          MESON_CMD="meson setup --buildtype release build -Dgtest=false"
 
           # Source environment and set compiler for SYCL
           if [ "${{ matrix.backend }}" == "sycl" ]; then
