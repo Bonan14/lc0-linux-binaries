@@ -90,18 +90,13 @@ jobs:
             export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icpx
             echo "Using CXX compiler: $CXX"
             $CXX --version
-            cat <<EOF > ./native.ini
-            [binaries]
-            c = '/opt/intel/oneapi/compiler/2024.1/bin/icx'
-            cpp = '/opt/intel/oneapi/compiler/2024.1/bin/icpx'
-            EOF
             # Verify native.ini creation
             if [ ! -f ./native.ini ]; then
               echo "Error: native.ini not created!"
               exit 1
             fi
             cat ./native.ini
-            $MESON_CMD -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file ./native.ini
+            $MESON_CMD -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file ./workflows/native.ini
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
             $MESON_CMD -Dcuda=true -Dcudnn=false
           else
