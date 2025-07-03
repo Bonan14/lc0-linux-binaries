@@ -64,6 +64,13 @@ jobs:
             opencl-headers \
             ocl-icd-opencl-dev
 
+          # Verify dpcpp installation
+          if ! command -v icx &> /dev/null; then
+            echo "Error: icx compiler not found!"
+            exit 1
+          fi
+          icx --version
+
       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # ~~~    BUILD & CONFIGURE   ~~~
       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,7 +92,11 @@ jobs:
            # Assuming cuDNN is not used per original config
             $CMD -Dcuda=true -Dcudnn=false
           elif [ "${{ matrix.backend }}" == "sycl" ]; then
-            $CMD -Dsycl=l0 -Dcpp_args=-fsycl -Db_vscrt=md
+            # Verify CXX is set to icx
+            export CXX=/opt/intel/oneapi/compiler/latest/bin/icx
+            echo "Using CXX compiler: $CXX"
+            $CXX --version
+            $CMD -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md
           fi
 
       - name: Build with Ninja
