@@ -90,7 +90,7 @@ jobs:
             export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icx
             echo "Using CXX compiler: $CXX"
             $CXX --version
-            $MESON_CMD -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file ./workflows/native.ini
+            $MESON_CMD -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
             $MESON_CMD -Dcuda=true -Dcudnn=false
           else
