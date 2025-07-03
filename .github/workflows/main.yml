@@ -87,15 +87,9 @@ jobs:
           # Source environment and set compiler for SYCL
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
-            export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icpx
+            export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icx
             echo "Using CXX compiler: $CXX"
             $CXX --version
-            # Verify native.ini creation
-            if [ ! -f ./native.ini ]; then
-              echo "Error: native.ini not created!"
-              exit 1
-            fi
-            cat ./native.ini
             $MESON_CMD -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file ./workflows/native.ini
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
             $MESON_CMD -Dcuda=true -Dcudnn=false
