@@ -85,7 +85,7 @@ jobs:
            # Assuming cuDNN is not used per original config
             $CMD -Dcuda=true -Dcudnn=false
           elif [ "${{ matrix.backend }}" == "sycl" ]; then
-            $CMD -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md
+            $CMD -Dsycl=l0 -Dcpp_args=-fsycl -Db_vscrt=md
           fi
 
       - name: Build with Ninja
