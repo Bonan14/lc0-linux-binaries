@@ -58,7 +58,11 @@ jobs:
           echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt update
           sudo apt-get update
-          sudo apt-get install -y intel-oneapi-dpcpp-cpp-2024.1
+          sudo apt-get install -y \
+            intel-oneapi-dpcpp-cpp-2024.1 \
+            intel-oneapi-mkl-devel \
+            opencl-headers \
+            ocl-icd-opencl-dev
 
       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # ~~~    BUILD & CONFIGURE   ~~~
