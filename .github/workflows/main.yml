@@ -114,9 +114,8 @@ jobs:
             cat <<EOF > native.ini
             [binaries]
             c = '/opt/intel/oneapi/compiler/2024.1/bin/icx'
-            cpp = '/opt/intel/oneapi/compiler/2024.1/bin/icpx'
+            cpp = '/opt/intel/oneapi/compiler/2024.1/bin/icx'
             EOF
-            # FIX: Removed erroneous 'gars' and Windows-specific 'b_vscrt=md' arguments
             $MESON_CMD -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file native.ini
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
             $MESON_CMD -Dcuda=true -Dcudnn=false
@@ -142,7 +141,7 @@ jobs:
 
       - name: Download Network
         # Check if file exists from cache before downloading
-        if: "! test builddir/T79.pb.gz"
+        if: "! builddir/T79.pb.gz"
         run: |
           cd builddir
           curl -L https://training.lczero.org/get_network?sha=195b450999e874d07aea2c09fd0db5eff9d4441ec1ad5a60a140fe8ea94c4f3a -o T79.pb.gz
