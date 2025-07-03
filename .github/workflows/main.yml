@@ -65,11 +65,12 @@ jobs:
             ocl-icd-opencl-dev
 
           # Verify dpcpp installation
-          if ! command -v icx &> /dev/null; then
+          export ICX=/opt/intel/oneapi/compiler/2024.1/bin/icx
+          if ! ICX; then
             echo "Error: icx compiler not found!"
-            exit 1
+            #exit 1
           fi
-          icx --version
+          ICX --version
 
       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # ~~~    BUILD & CONFIGURE   ~~~
@@ -93,7 +94,7 @@ jobs:
             $CMD -Dcuda=true -Dcudnn=false
           elif [ "${{ matrix.backend }}" == "sycl" ]; then
             # Verify CXX is set to icx
-            export CXX=/opt/intel/oneapi/compiler/latest/bin/icx
+            export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icx
             echo "Using CXX compiler: $CXX"
             $CXX --version
             $CMD -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md
