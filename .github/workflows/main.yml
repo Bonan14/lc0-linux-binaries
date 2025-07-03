@@ -99,11 +99,11 @@ jobs:
 
           # Add flags based on backend
           if [ "${{ matrix.backend }}" == "blas" ]; then
-            meson setup --buildtype release builddir -Dblas=true
+            meson setup build --buildtype release --backend ninja -Dblas=true
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
-            meson setup --buildtype release builddir -Dcuda=true -Dcudnn=false
+            meson setup build --buildtype release --backend ninja -Dcuda=true -Dcudnn=false
           elif [ "${{ matrix.backend }}" == "sycl" ]; then
-            meson setup --buildtype release builddir -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md --native-file native.ini
+            meson setup build --buildtype release --backend ninja -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md --native-file native.ini
           fi
 
       - name: Build with Ninja
@@ -111,7 +111,7 @@ jobs:
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
           fi
-          ninja -C builddir
+          ninja -C build
 
       - name: Upload Meson Log on Failure
         if: failure()
