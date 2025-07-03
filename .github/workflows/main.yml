@@ -15,6 +15,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
         backend: [blas, cuda, sycl]
+
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -43,20 +44,21 @@ jobs:
       - name: Install CUDA dependencies
         if: matrix.backend == 'cuda'
         run: |
-          # Note: This installs the CUDA toolkit from the Ubuntu repo, which may not be the latest version.
-          # For a specific version, you would use NVIDIA's CUDA repository.
-          sudo apt update
-          sudo apt-get install -y nvidia-cuda-toolkit
+          # Install CUDA from NVIDIA's repository for a specific version
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${{ matrix.os == 'ubuntu-22.04' && '2204' || '2404' }}/x86_64/cuda-keyring_1.1-1_all.deb
+          sudo dpkg -i cuda-keyring_1.1-1_all.deb
+          sudo apt-get update
+          sudo apt-get install -y cuda-toolkit-12-4
+          rm cuda-keyring_1.1-1_all.deb
 
       - name: Install SYCL dependencies (Intel oneAPI)
         if: matrix.backend == 'sycl'
         run: |
-          # Install Intel DPC++ Compiler
+          # Install Intel oneAPI DPC++ Compiler and dependencies
           wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
           echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-          sudo apt update
           sudo apt-get update
           sudo apt-get install -y \
             intel-oneapi-dpcpp-cpp-2024.1 \
@@ -64,13 +66,13 @@ jobs:
             opencl-headers \
             ocl-icd-opencl-dev
 
-          # Verify dpcpp installation
-          export ICX=/opt/intel/oneapi/compiler/2024.1/bin/icx
-          if ! ICX; then
-            echo "Error: icx compiler not found!"
-            #exit 1
+          # Verify icpx installation
+          export ICPX=/opt/intel/oneapi/compiler/2024.1/bin/icpx
+          if ! $ICPX --version; then
+            echo "Error: icpx compiler not found!"
+            exit 1
           fi
-          ICX --version
+          $ICPX --version
 
       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # ~~~    BUILD & CONFIGURE   ~~~
@@ -81,6 +83,20 @@ jobs:
           # Source environment for SYCL if needed
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
+            export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icpx
+          else
+            export CXX=c++
+          fi
+          echo "Using CXX compiler: $CXX"
+          $CXX --version
+
+          # Create native.ini for SYCL builds
+          if [ "${{ matrix.backend }}" == "sycl" ]; then
+            cat <<EOF > native.ini
+            [binaries]
+            c = '/opt/intel/oneapi/compiler/2024.1/bin/icx'
+            cpp = '/opt/intel/oneapi/compiler/2024.1/bin/icpx'
+            EOF
           fi
 
           # Base command
@@ -90,44 +106,46 @@ jobs:
           if [ "${{ matrix.backend }}" == "blas" ]; then
             $CMD -Dblas=true
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
-           # Assuming cuDNN is not used per original config
             $CMD -Dcuda=true -Dcudnn=false
           elif [ "${{ matrix.backend }}" == "sycl" ]; then
-            # Verify CXX is set to icx
-            export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icx
-            echo "Using CXX compiler: $CXX"
-            $CXX --version
-            $CMD -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md
+            $CMD -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link gars -Dcpp_link_args=-fsycl -Db_vscrt=md --native-file native.ini
           fi
 
       - name: Build with Ninja
         run: |
-          # Source environment for SYCL if needed for the build step
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
           fi
           ninja -C builddir
 
-      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      # ~~~      TEST & UPLOAD     ~~~
-      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      
+      - name: Upload Meson Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: meson-log-${{ matrix.os }}-${{ matrix.backend }}
+          path: builddir/meson-logs/meson-log.txt
+
       - name: Download Network
         run: |
           cd builddir
           curl -L https://training.lczero.org/get_network?sha=195b450999e874d07aea2c09fd0db5eff9d4441ec1ad5a60a140fe8ea94c4f3a -o T79.pb.gz
+          if [ ! -f T79.pb.gz ]; then
+            echo "Error: Failed to download T79.pb.gz"
+            exit 1
+          fi
 
       - name: Update file timestamp
         run: touch -t 201801010000.00 builddir/T79.pb.gz
 
       - name: Run tests
-        # Use the backend specified in the matrix for the benchmark
         run: |
+          if [ "${{ matrix.backend }}" == "sycl" ]; then
+            source /opt/intel/oneapi/setvars.sh
+          fi
           ./builddir/lc0 benchmark --backend=${{ matrix.backend }} --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4.4.3
         with:
-          # Artifact name now includes OS and backend for clarity
           name: lc0-${{ matrix.os }}-${{ matrix.backend }}
           path: builddir
