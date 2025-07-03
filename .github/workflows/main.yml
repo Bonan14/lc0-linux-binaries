@@ -1,4 +1,4 @@
-name: Multi-Platform Meson Build with CUDA, ONNX, and BLAS
+name: Multi-Platform Meson Build
 
 on:
   push:
@@ -14,54 +14,104 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-
+        backend: [blas, cuda, sycl]
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true  # Ensure submodules are checked out
+          submodules: true
 
       - name: Update submodules
         run: |
-         git submodule sync --recursive
-         git submodule update --init --recursive
-        
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      # ~~~ DEPENDENCY INSTALLATION ~~~
+      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      - name: Install common dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y meson 
-          sudo apt-get install -y ninja-build 
-          sudo apt-get install -y libblas-dev 
-          sudo apt-get install -y libopenblas-dev
-          # Install CUDA
-          # sudo apt-get install -y nvidia-cuda-toolkit
+          sudo apt-get install -y meson ninja-build curl
 
-      - name: Configure Meson(Linux)      
-        if: runner.os == 'Linux'
+      - name: Install BLAS dependencies
+        if: matrix.backend == 'blas'
+        run: sudo apt-get install -y libblas-dev libopenblas-dev
+
+      - name: Install CUDA dependencies
+        if: matrix.backend == 'cuda'
         run: |
-            meson setup --buildtype release builddir -Dblas=true -Dcudnn=false
+          # Note: This installs the CUDA toolkit from the Ubuntu repo, which may not be the latest version.
+          # For a specific version, you would use NVIDIA's CUDA repository.
+          sudo apt update
+          sudo apt-get install -y nvidia-cuda-toolkit
 
-      - name: Build with Meson(Linux)
-        if: runner.os == 'Linux'
+      - name: Install SYCL dependencies (Intel oneAPI)
+        if: matrix.backend == 'sycl'
         run: |
-            ninja -C builddir
+          # Install Intel DPC++ Compiler
+          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+          sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+          rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+          echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt update
+          sudo apt-get update
+          sudo apt-get install -y intel-oneapi-dpcpp-cpp-2024.1
 
+      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      # ~~~    BUILD & CONFIGURE   ~~~
+      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      - name: Configure Meson
+        run: |
+          # Source environment for SYCL if needed
+          if [ "${{ matrix.backend }}" == "sycl" ]; then
+            source /opt/intel/oneapi/setvars.sh
+          fi
+
+          # Base command
+          CMD="meson setup --buildtype release builddir"
+
+          # Add flags based on backend
+          if [ "${{ matrix.backend }}" == "blas" ]; then
+            $CMD -Dblas=true
+          elif [ "${{ matrix.backend }}" == "cuda" ]; then
+           # Assuming cuDNN is not used per original config
+            $CMD -Dcuda=true -Dcudnn=false
+          elif [ "${{ matrix.backend }}" == "sycl" ]; then
+            $CMD -Dsycl=l0
+          fi
+
+      - name: Build with Ninja
+        run: |
+          # Source environment for SYCL if needed for the build step
+          if [ "${{ matrix.backend }}" == "sycl" ]; then
+            source /opt/intel/oneapi/setvars.sh
+          fi
+          ninja -C builddir
+
+      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      # ~~~      TEST & UPLOAD     ~~~
+      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      
       - name: Download Network
         run: |
-         cd builddir
-         curl -L https://training.lczero.org/get_network?sha=195b450999e874d07aea2c09fd0db5eff9d4441ec1ad5a60a140fe8ea94c4f3a -o T79.pb.gz
+          cd builddir
+          curl -L https://training.lczero.org/get_network?sha=195b450999e874d07aea2c09fd0db5eff9d4441ec1ad5a60a140fe8ea94c4f3a -o T79.pb.gz
 
       - name: Update file timestamp
-        run: |
-         touch -t 201801010000.00 T79.pb.gz
+        run: touch -t 201801010000.00 builddir/T79.pb.gz
 
       - name: Run tests
-        run: ./builddir/lc0 benchmark --backend=blas --num-positions=2  --task-workers=3 --minibatch-size=7 --threads=2
+        # Use the backend specified in the matrix for the benchmark
+        run: |
+          ./builddir/lc0 benchmark --backend=${{ matrix.backend }} --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4.4.3
         with:
-          name: lc0-${{ matrix.os }}
+          # Artifact name now includes OS and backend for clarity
+          name: lc0-${{ matrix.os }}-${{ matrix.backend }}
           path: builddir
