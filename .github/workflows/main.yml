@@ -99,7 +99,7 @@ jobs:
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
             $CMD -Dcuda=true -Dcudnn=false
           elif [ "${{ matrix.backend }}" == "sycl" ]; then
-            $CMD -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link gars -Dcpp_link_args=-fsycl -Db_vscrt=md --native-file native.ini
+            $CMD -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md --native-file native.ini
           fi
 
       - name: Build with Ninja
