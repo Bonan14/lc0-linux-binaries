@@ -90,6 +90,13 @@ jobs:
           echo "Using CXX compiler: $CXX"
           $CXX --version
 
+          # Create native.ini in the working directory
+            cat <<EOF > ./native.ini
+            [binaries]
+            c = '/opt/intel/oneapi/compiler/2024.1/bin/icx'
+            cpp = '/opt/intel/oneapi/compiler/2024.1/bin/icpx'
+            EOF
+
           # Base command
           CMD="meson setup --buildtype release builddir"
 
