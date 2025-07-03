@@ -70,7 +70,7 @@ jobs:
             ocl-icd-opencl-dev
 
           # Verify icpx installation
-          export ICX=/opt/intel/oneapi/compiler/2024.1/bin/icx
+          export ICX=/opt/intel/oneapi/compiler/2025.2/bin/icx
           if ! $ICX --version; then
             echo "Error: icx compiler not found!"
             exit 1
