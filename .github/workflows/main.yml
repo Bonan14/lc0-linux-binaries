@@ -99,11 +99,11 @@ jobs:
 
           # Add flags based on backend
           if [ "${{ matrix.backend }}" == "blas" ]; then
-            meson setup build --buildtype release --backend ninja -Dblas=true
+            meson setup --buildtype release --backend ninja build -Dblas=true
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
-            meson setup build --buildtype release --backend ninja -Dcuda=true -Dcudnn=false
+            meson setup --buildtype release --backend ninja build -Dcuda=true -Dcudnn=false
           elif [ "${{ matrix.backend }}" == "sycl" ]; then
-            meson setup build --buildtype release --backend ninja -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md --native-file native.ini
+            meson setup --buildtype release --backend ninja build -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md --native-file native.ini
           fi
 
       - name: Build with Ninja
@@ -111,18 +111,19 @@ jobs:
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
           fi
-          ninja -C build
+          cd build
+          ninja -C -v
 
       - name: Upload Meson Log on Failure
         if: failure()
         uses: actions/upload-artifact@v4.4.3
         with:
           name: meson-log-${{ matrix.os }}-${{ matrix.backend }}
-          path: builddir/meson-logs/meson-log.txt
+          path: build/meson-logs/meson-log.txt
 
       - name: Download Network
         run: |
-          cd builddir
+          cd build
           curl -L https://training.lczero.org/get_network?sha=195b450999e874d07aea2c09fd0db5eff9d4441ec1ad5a60a140fe8ea94c4f3a -o T79.pb.gz
           if [ ! -f T79.pb.gz ]; then
             echo "Error: Failed to download T79.pb.gz"
@@ -137,7 +138,7 @@ jobs:
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
           fi
-          ./builddir/lc0 benchmark --backend=${{ matrix.backend }} --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
+          ./build/lc0 benchmark --backend=${{ matrix.backend }} --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4.4.3
