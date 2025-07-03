@@ -39,7 +39,8 @@ jobs:
 
       - name: Install BLAS dependencies
         if: matrix.backend == 'blas'
-        run: sudo apt-get install -y libblas-dev libopenblas-dev
+        run: | 
+          sudo apt-get install -y libblas-dev libopenblas-dev
 
       - name: Install CUDA dependencies
         if: matrix.backend == 'cuda'
@@ -90,7 +91,7 @@ jobs:
             export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icx
             echo "Using CXX compiler: $CXX"
             $CXX --version
-            $MESON_CMD -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl
+            $MESON_CMD -Dsycl=l0 -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
             $MESON_CMD -Dcuda=true -Dcudnn=false
           else
