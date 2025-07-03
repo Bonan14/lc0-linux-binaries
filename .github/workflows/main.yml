@@ -56,10 +56,7 @@ jobs:
         if: matrix.backend == 'sycl'
         run: |
           # Install Intel oneAPI DPC++ Compiler and dependencies
-          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-          sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-          rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
-          echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo zypper install intel-oneapi-base-toolkit
           sudo apt-get update
           sudo apt-get install -y \
             intel-oneapi-dpcpp-cpp-2024.1 \
@@ -68,9 +65,9 @@ jobs:
             ocl-icd-opencl-dev
 
           # Verify icpx installation
-          export ICPX=/opt/intel/oneapi/compiler/2024.1/bin/icpx
+          export ICPX=/opt/intel/oneapi/compiler/2024.1/bin/icx
           if ! $ICPX --version; then
-            echo "Error: icpx compiler not found!"
+            echo "Error: icx compiler not found!"
             exit 1
           fi
           $ICPX --version
