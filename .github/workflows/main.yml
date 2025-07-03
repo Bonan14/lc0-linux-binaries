@@ -63,7 +63,7 @@ jobs:
           echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt-get update
           sudo apt-get install -y \
-            intel-oneapi-dpcpp-cpp-2024.1 \
+            intel-oneapi-dpcpp-cpp-2025.2 \
             intel-oneapi-dpcpp-ct \
             intel-oneapi-mkl-devel \
             opencl-headers \
@@ -89,7 +89,7 @@ jobs:
           # Source environment and set compiler for SYCL
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
-            export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icx
+            export CXX=/opt/intel/oneapi/compiler/2025.2/bin/icx
             echo "Using CXX compiler: $CXX"
             $CXX --version
             $MESON_CMD -Dsycl=l0 -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl
