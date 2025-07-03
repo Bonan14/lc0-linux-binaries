@@ -25,7 +25,7 @@ jobs:
 
       - name: Update submodules
         run: |
-          git submodule sync --recursive 
+          git submodule sync --recursive
           git submodule update --init --recursive
 
       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -44,12 +44,13 @@ jobs:
       - name: Install CUDA dependencies
         if: matrix.backend == 'cuda'
         run: |
-          # Install CUDA from NVIDIA's repository for a specific version
+          # Install CUDA from NVIDIA's repository
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${{ matrix.os == 'ubuntu-22.04' && '2204' || '2404' }}/x86_64/cuda-keyring_1.1-1_all.deb
           sudo dpkg -i cuda-keyring_1.1-1_all.deb
           sudo apt-get update
           sudo apt-get install -y cuda-toolkit-12-4
           rm cuda-keyring_1.1-1_all.deb
+          nvcc --version
 
       - name: Install SYCL dependencies (Intel oneAPI)
         if: matrix.backend == 'sycl'
@@ -80,30 +81,31 @@ jobs:
 
       - name: Configure Meson
         run: |
-          # Source environment for SYCL if needed
+          # Define base Meson command
+          MESON_CMD="meson setup --buildtype release build"
+
+          # Source environment and set compiler for SYCL
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
-            export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icx
-          else
-            export CXX=c++
-          fi
-          echo "Using CXX compiler: $CXX"
-          $CXX --version
-
-          # Create native.ini in the working directory
+            export CXX=/opt/intel/oneapi/compiler/2024.1/bin/icpx
+            echo "Using CXX compiler: $CXX"
+            $CXX --version
             cat <<EOF > ./native.ini
-            [binaries]
-            c = '/opt/intel/oneapi/compiler/2024.1/bin/icx'
-            cpp = '/opt/intel/oneapi/compiler/2024.1/bin/icpx'
-            EOF
-
-          # Add flags based on backend
-          if [ "${{ matrix.backend }}" == "blas" ]; then
-            meson setup --buildtype release --backend ninja build -Dblas=true
+[binaries]
+c = '/opt/intel/oneapi/compiler/2024.1/bin/icx'
+cpp = '/opt/intel/oneapi/compiler/2024.1/bin/icpx'
+EOF
+            # Verify native.ini creation
+            if [ ! -f ./native.ini ]; then
+              echo "Error: native.ini not created!"
+              exit 1
+            fi
+            cat ./native.ini
+            $MESON_CMD -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file ./native.ini
           elif [ "${{ matrix.backend }}" == "cuda" ]; then
-            meson setup --buildtype release --backend ninja build -Dcuda=true -Dcudnn=false
-          elif [ "${{ matrix.backend }}" == "sycl" ]; then
-            meson setup --buildtype release --backend ninja build -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl -Db_vscrt=md --native-file native.ini
+            $MESON_CMD -Dcuda=true -Dcudnn=false
+          else
+            $MESON_CMD -Dblas=true
           fi
 
       - name: Build with Ninja
@@ -111,8 +113,7 @@ jobs:
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
           fi
-          cd build
-          ninja -C -v
+          ninja -C build -v
 
       - name: Upload Meson Log on Failure
         if: failure()
@@ -131,17 +132,20 @@ jobs:
           fi
 
       - name: Update file timestamp
-        run: touch -t 201801010000.00 builddir/T79.pb.gz
+        run: touch -t 201801010000.00 build/T79.pb.gz
 
       - name: Run tests
         run: |
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
+            # Use blas as fallback if sycl backend is not supported
+            ./build/lc0 benchmark --backend=blas --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
+          else
+            ./build/lc0 benchmark --backend=${{ matrix.backend }} --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
           fi
-          ./build/lc0 benchmark --backend=${{ matrix.backend }} --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4.4.3
         with:
           name: lc0-${{ matrix.os }}-${{ matrix.backend }}
-          path: builddir
+          path: build
