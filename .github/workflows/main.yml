@@ -102,9 +102,7 @@ jobs:
       - name: Build with Ninja
         run: |
           if [ "${{ matrix.backend }}" == "sycl" ]; then
-            source /opt/intel/oneapi/setvars.sh
-            ar = '/usr/bin/ar'
-            ranlib = '/usr/bin/ranlib'
+            #source /opt/intel/oneapi/setvars.sh
           fi
           ninja -C build -v
 
