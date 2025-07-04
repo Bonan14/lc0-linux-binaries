@@ -101,11 +101,11 @@ jobs:
           MESON_CMD="meson setup --buildtype release build -Dgtest=false"
 
           # Build native.ini file
-          <<test > native.ini
+          cat << EoF > ./native.ini
              [binaries]
              ar = '/usr/bin/ar'
              ranlib = '/usr/bin/ranlib'
-          test
+          EoF
 
           # Source environment and set compiler for SYCL
           if [ "sycl" == "sycl" ]; then
