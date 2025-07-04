@@ -100,17 +100,19 @@ jobs:
           # Define base Meson command
           MESON_CMD="meson setup --buildtype release build -Dgtest=false"
 
+          # Build native.ini file
+          <<test > native.ini
+             [binaries]
+             ar = '/usr/bin/ar'
+             ranlib = '/usr/bin/ranlib'
+          test
+
           # Source environment and set compiler for SYCL
           if [ "sycl" == "sycl" ]; then
              source /opt/intel/oneapi/setvars.sh
              export CXX=/opt/intel/oneapi/compiler/2025.2/bin/icx
              echo "Using CXX compiler: $CXX"
              $CXX --version
-          <<test > native.ini
-             [binaries]
-             ar = '/usr/bin/ar'
-             ranlib = '/usr/bin/ranlib'
-          test
              $MESON_CMD -Dsycl=l0 -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file native.ini
           elif [ "sycl" == "cuda" ]; then
              $MESON_CMD -Dcuda=true -Dcudnn=false
