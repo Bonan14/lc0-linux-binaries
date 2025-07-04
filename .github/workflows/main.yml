@@ -80,7 +80,6 @@ jobs:
             intel-oneapi-mkl-devel \
             opencl-headers \
             ocl-icd-opencl-dev
-
           # Verify icpx installation
           export ICX=/opt/intel/oneapi/compiler/2025.2/bin/icx
           if ! $ICX --version; then
@@ -99,7 +98,6 @@ jobs:
           rm -rf build
           # Define base Meson command
           MESON_CMD="meson setup --buildtype release build -Dgtest=false"
-
           # Build native.ini file
           cat << EoF > ./native.ini
              [binaries]
@@ -108,15 +106,14 @@ jobs:
              ar = '/usr/bin/ar'
              ranlib = '/usr/bin/ranlib'
           EoF
-
           # Source environment and set compiler for SYCL
-          if [ $matrix.backend == 'sycl' ]; then
+          if [ "${{ matrix.backend }}" == "sycl" ]; then
              source /opt/intel/oneapi/setvars.sh
              export CXX=/opt/intel/oneapi/compiler/2025.2/bin/icx
              echo "Using CXX compiler: $CXX"
              $CXX --version
              $MESON_CMD -Dsycl=l0 -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file native.ini
-          elif [ $matrix.backend == 'cuda' ]; then
+          elif [ "${{ matrix.backend }}" == "cuda" ]; then
              $MESON_CMD -Dcuda=true -Dcudnn=false
           else
              $MESON_CMD -Dblas=true
