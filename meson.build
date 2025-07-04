@@ -681,13 +681,6 @@ if get_option('build_backends')
         deps += cc.find_library('mkl_sequential', required: true)
         deps += cc.find_library('mkl_core', required: true)
         deps += cc.find_library('OpenCL', required: true)
-        # Run ranlib for static archives
-        custom_target(
-           'absl_container_index',
-           output: 'libabsl_container.a',
-           input: 'subprojects/abseil-cpp-20240722.0/libabsl_container.a',
-           command: ['ranlib', '@INPUT@']
-         )
       elif get_option('sycl') == 'amd'
         deps += cc.find_library('hipblas', required: true)
         deps += cc.find_library('amdhip64', required: true)
