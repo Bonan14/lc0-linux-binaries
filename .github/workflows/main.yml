@@ -108,13 +108,13 @@ jobs:
           EoF
 
           # Source environment and set compiler for SYCL
-          if [ "sycl" == "sycl" ]; then
+          if [ "matrix.backend" == "sycl" ]; then
              source /opt/intel/oneapi/setvars.sh
              export CXX=/opt/intel/oneapi/compiler/2025.2/bin/icx
              echo "Using CXX compiler: $CXX"
              $CXX --version
              $MESON_CMD -Dsycl=l0 -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file native.ini
-          elif [ "sycl" == "cuda" ]; then
+          elif [ "matrix.backend" == "cuda" ]; then
              $MESON_CMD -Dcuda=true -Dcudnn=false
           else
              $MESON_CMD -Dblas=true
@@ -145,13 +145,7 @@ jobs:
 
       - name: Run tests
         run: |
-          if [ "${{ matrix.backend }}" == "sycl" ]; then
-            source /opt/intel/oneapi/setvars.sh
-            # Use blas as fallback if sycl backend is not supported
-            ./build/lc0 benchmark --backend=blas --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
-          else
             ./build/lc0 benchmark --backend=${{ matrix.backend }} --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
-          fi
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4.4.3
