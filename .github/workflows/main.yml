@@ -101,23 +101,23 @@ jobs:
           MESON_CMD="meson setup --buildtype release build -Dgtest=false"
 
           # Source environment and set compiler for SYCL
-          if [ "${{ matrix.backend }}" == "sycl" ]; then
-            source /opt/intel/oneapi/setvars.sh
-            export CXX=/opt/intel/oneapi/compiler/2025.2/bin/icx
-            echo "Using CXX compiler: $CXX"
-            $CXX --version
-            cat <<EOF > native.ini
-            [binaries]
-            ar = '/usr/bin/ar'
-            ranlib = '/usr/bin/ranlib'
-            EOF
-            $MESON_CMD -Dsycl=l0 -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file native.ini
-          elif [ "${{ matrix.backend }}" == "cuda" ]; then
-            $MESON_CMD -Dcuda=true -Dcudnn=false
+          if [ "sycl" == "sycl" ]; then
+             source /opt/intel/oneapi/setvars.sh
+             export CXX=/opt/intel/oneapi/compiler/2025.2/bin/icx
+             echo "Using CXX compiler: $CXX"
+             $CXX --version
+             cat <<EOF > native.ini
+             [binaries]
+             ar = '/usr/bin/ar'
+             ranlib = '/usr/bin/ranlib'
+             EOF
+             $MESON_CMD -Dsycl=l0 -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file native.ini
+          elif [ "sycl" == "cuda" ]; then
+             $MESON_CMD -Dcuda=true -Dcudnn=false
           else
-            $MESON_CMD -Dblas=true
+             $MESON_CMD -Dblas=true
           fi
-
+          
       - name: Build with Ninja
         run: |
           if [ "${{ matrix.backend }}" == "sycl" ]; then
