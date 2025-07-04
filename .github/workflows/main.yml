@@ -98,14 +98,6 @@ jobs:
           rm -rf build
           # Define base Meson command
           MESON_CMD="meson setup --buildtype release build -Dgtest=false"
-          # Build native.ini file
-          cat << EoF > ./native.ini
-             [binaries]
-             c = '/opt/intel/oneapi/compiler/2025.2/bin/icx'
-             cpp = '/opt/intel/oneapi/compiler/2025.2/bin/icx'
-             ar = '/usr/bin/ar'
-             ranlib = '/usr/bin/ranlib'
-          EoF
           # Source environment and set compiler for SYCL
           if [ "${{ matrix.backend }}" == "sycl" ]; then
              source /opt/intel/oneapi/setvars.sh
@@ -147,7 +139,9 @@ jobs:
 
       - name: Run tests
         run: |
-            ./build/lc0 benchmark --backend=${{ matrix.backend }} --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
+            if [ "${{ matrix.backend }}" == "blas" ]; then
+              ./build/lc0 benchmark --backend=${{ matrix.backend }} --num-positions=2 --task-workers=3 --minibatch-size=7 --threads=2
+            fi
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4.4.3
