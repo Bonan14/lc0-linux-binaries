@@ -106,7 +106,7 @@ jobs:
              export CXX=/opt/intel/oneapi/compiler/2025.2/bin/icx
              echo "Using CXX compiler: $CXX"
              $CXX --version
-             cat <<EOF > ./native.ini
+             tee native.ini <<EOF
              [binaries]
              ar = '/usr/bin/ar'
              ranlib = '/usr/bin/ranlib'
