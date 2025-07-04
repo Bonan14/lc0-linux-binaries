@@ -104,7 +104,7 @@ jobs:
           if [ "${{ matrix.backend }}" == "sycl" ]; then
             source /opt/intel/oneapi/setvars.sh
           fi
-          ninja -C build -v
+          ninja -C -v clean build
 
       - name: Upload Meson Log on Failure
         if: failure()
