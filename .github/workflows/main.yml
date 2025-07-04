@@ -106,11 +106,11 @@ jobs:
              export CXX=/opt/intel/oneapi/compiler/2025.2/bin/icx
              echo "Using CXX compiler: $CXX"
              $CXX --version
-             tee native.ini <<EOF
+             <<test > native.ini
              [binaries]
              ar = '/usr/bin/ar'
              ranlib = '/usr/bin/ranlib'
-             EOF
+             test
              $MESON_CMD -Dsycl=l0 -Dblas=true -Dcpp_args=-fsycl -Dcpp_link_args=-fsycl --native-file native.ini
           elif [ "sycl" == "cuda" ]; then
              $MESON_CMD -Dcuda=true -Dcudnn=false
