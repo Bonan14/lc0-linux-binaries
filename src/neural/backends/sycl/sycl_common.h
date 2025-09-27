@@ -59,5 +59,17 @@ void CublasError(int status, const char* file, const int& line);
 
 inline int DivUp(int a, int b) { return (a + b - 1) / b; }
 
+struct DeviceCapabilities {
+    int max_workgroup_size;
+    // int optimal_block_size; 
+
+    explicit DeviceCapabilities(const sycl::queue& queue)
+        : max_workgroup_size(queue.get_device().get_info<sycl::info::device::max_work_group_size>()) {}
+
+    // Getters here.
+    int GetMaxWorkgroupSize() { return max_workgroup_size; }
+    //int GetOptimalBlockSize() { return optimal_block_size; }
+};
+
 }  // namespace sycldnn_backend
 }  // namespace lczero

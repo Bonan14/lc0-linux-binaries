@@ -245,6 +245,9 @@ class SyclNetwork : public Network {
               exceptions_handler, sycl::property_list{sycl::property::queue::in_order{}} };
 
     showDeviceInfo(*sycl_queue_);
+    // Initialize capabilities bound to this queue/GPU (queries once)
+    caps_ = DeviceCapabilities(*sycl_queue_);
+    CERR << "Maximum workgroup size: " << caps_.GetMaxWorkgroupSize();
 
     l2_cache_size_ =  sycl_queue_->get_device().get_info<sycl::info::device::local_mem_size>();
 
@@ -966,6 +969,7 @@ class SyclNetwork : public Network {
   mutable std::mutex lock_;
   sycl::queue* sycl_queue_;
   bool is_cpu_;
+  DeviceCapabilities caps_;
 
 
   int numBlocks_;
