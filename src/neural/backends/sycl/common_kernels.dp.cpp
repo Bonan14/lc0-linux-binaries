@@ -1622,7 +1622,8 @@ void inputPreprocessForAttentionBody(T* output, const T* input,
   // Each thread computes a single output element
   sycl::range<3> gridSize = sycl::range<3>(1, 64, N);
   sycl::range<3> blockSize(1, 1, 1);
-  blockSize[2] = sycl::min(input_size + encoding_size, 512);
+  int maxWorkgroupSize = DeviceCapabilities::GetMaxWorkgroupSize();
+  blockSize[2] = sycl::min(input_size + encoding_size, maxWorkgroupSize);
   blockSize[1] = 1;
   blockSize[0] = 1;
   gridSize[0] = DivUp(input_size + encoding_size, blockSize[2]);
@@ -1666,7 +1667,8 @@ void applyInputGating(T* output, const T* input, const T* mult, const T* add,
   // Block y position indicates batch
   // Each thread computes a single output element
   sycl::range<3> blockSize(1, 1, 1), gridSize(1, 1, 1);
-  blockSize[2] = DivUp(512, HW);
+  int maxWorkgroupSize = DeviceCapabilities::GetMaxWorkgroupSize();
+  blockSize[2] = DivUp(maxWorkgroupSize, HW);
   blockSize[1] = HW;
   blockSize[0] = 1;
   gridSize[2] = DivUp(C, blockSize[2]);
