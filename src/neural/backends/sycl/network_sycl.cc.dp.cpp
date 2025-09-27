@@ -246,13 +246,6 @@ class SyclNetwork : public Network {
 
     showDeviceInfo(*sycl_queue_);
 
-    // Initialize device capabilities for kernel optimization
-    DeviceCapabilities::Initialize(*sycl_queue_);
-    
-    CERR << "Maximum workgroup size: " << DeviceCapabilities::GetMaxWorkgroupSize();
-    CERR << "Optimal block size: " << DeviceCapabilities::GetOptimalBlockSize();
-
-
     l2_cache_size_ =  sycl_queue_->get_device().get_info<sycl::info::device::local_mem_size>();
 
     allow_cache_opt_ = options.GetOrDefault<bool>("cache_opt", false);
