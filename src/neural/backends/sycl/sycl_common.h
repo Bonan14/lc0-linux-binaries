@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <unordered_map>
+#include <mutex>
 #include <sycl/sycl.hpp>
 #include "dpct/dpct.hpp"
 #include "dpct/blas_utils.hpp"
@@ -60,16 +62,44 @@ void CublasError(int status, const char* file, const int& line);
 inline int DivUp(int a, int b) { return (a + b - 1) / b; }
 
 struct DeviceCapabilities {
-    int max_workgroup_size;
-    // int optimal_block_size; 
 
-    explicit DeviceCapabilities(const sycl::queue& queue)
-        : max_workgroup_size(queue.get_device().get_info<sycl::info::device::max_work_group_size>()) {}
+  public:
+    static int GetMaxWorkgroupSize(const sycl::queue& queue) {
+        const auto& device = queue.get_device();
+        std::lock_guard<std::mutex> lock(cache_mutex_);
+        
+        auto it = device_cache_.find(device);
+        if (it != device_cache_.end()) {
+            return it->second.max_workgroup_size;
+        }
+        
+        // Cache miss - query device and store
+        DeviceInfo info;
+        info.max_workgroup_size = device.get_info<sycl::info::device::max_work_group_size>();
+        device_cache_[device] = info;
+        
+        return info.max_workgroup_size;
+    }
+    
+    // Clear cache if needed
+    static void ClearCache() {
+        std::lock_guard<std::mutex> lock(cache_mutex_);
+        device_cache_.clear();
+    }
 
-    // Getters here.
-    int GetMaxWorkgroupSize() { return max_workgroup_size; }
-    //int GetOptimalBlockSize() { return optimal_block_size; }
+  private:
+    struct DeviceInfo {
+        int max_workgroup_size;
+    };
+    
+    static std::unordered_map<sycl::device, DeviceInfo> device_cache_;
+    static std::mutex cache_mutex_;
+
 };
+
+// Static member definitions
+inline std::unordered_map<sycl::device, DeviceInfo> DeviceCapabilities::device_cache_{};
+inline std::mutex DeviceCapabilities::cache_mutex_{};
 
 }  // namespace sycldnn_backend
 }  // namespace lczero
