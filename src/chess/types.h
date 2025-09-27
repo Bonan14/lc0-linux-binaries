@@ -117,7 +117,7 @@ class Square {
   // Flips the ranks. 1 becomes 8, 2 becomes 7, etc. Files remain the same.
   void Flip() { idx_ ^= 0b111000; }
   std::string ToString(bool uppercase = false) const {
-    return file().ToString(uppercase) + rank().ToString();
+    return file().ToString(uppercase) + rank().ToString(); 
   }
   constexpr bool operator==(const Square& other) const = default;
   constexpr bool operator!=(const Square& other) const = default;
