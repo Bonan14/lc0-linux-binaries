@@ -245,7 +245,7 @@ class SyclNetwork : public Network {
               exceptions_handler, sycl::property_list{sycl::property::queue::in_order{}} };
 
     showDeviceInfo(*sycl_queue_);
-    // Initialize capabilities bound to this queue/GPU (queries once)
+    // Initialize capabilities
     int maxWorkgroupSize = DeviceCapabilities::GetMaxWorkgroupSize(sycl_queue);
     CERR << "Maximum workgroup size: " << maxWorkgroupSize;
 

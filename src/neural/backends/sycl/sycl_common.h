@@ -62,8 +62,11 @@ void CublasError(int status, const char* file, const int& line);
 inline int DivUp(int a, int b) { return (a + b - 1) / b; }
 
 struct DeviceCapabilities {
-
   public:
+    struct DeviceInfo {
+        int max_workgroup_size;
+    };
+    
     static int GetMaxWorkgroupSize(const sycl::queue& queue) {
         const auto& device = queue.get_device();
         std::lock_guard<std::mutex> lock(cache_mutex_);
@@ -88,10 +91,6 @@ struct DeviceCapabilities {
     }
 
   private:
-    struct DeviceInfo {
-        int max_workgroup_size;
-    };
-    
     static std::unordered_map<sycl::device, DeviceInfo> device_cache_;
     static std::mutex cache_mutex_;
 
