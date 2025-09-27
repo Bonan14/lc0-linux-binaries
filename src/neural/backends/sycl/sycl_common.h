@@ -97,7 +97,7 @@ struct DeviceCapabilities {
 };
 
 // Static member definitions
-inline std::unordered_map<sycl::device, DeviceIDeviceCapabilities::DeviceInfo> DeviceCapabilities::device_cache_{};
+inline std::unordered_map<sycl::device, DeviceCapabilities::DeviceInfo> DeviceCapabilities::device_cache_{};
 inline std::mutex DeviceCapabilities::cache_mutex_{};
 
 }  // namespace sycldnn_backend
