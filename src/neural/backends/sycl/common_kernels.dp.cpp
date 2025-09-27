@@ -168,7 +168,7 @@ template <typename T>
 void addBiasBatched(T* output, const T* input, const T* bias, int Batch, int N,
                     int C, ActivationFunction activation, sycl::queue &sycl_queue) {
   // process 4 elements per thread to achieve close to peak memory bandwidth
-  int maxWorkgroupSize = sycl_queue.get_device().get_info<sycl::info::device::max_work_group_size>();
+  int maxWorkgroupSize = 256;
   if (C % 4 != 0) throw Exception("unsupported filter size");
   if (C > (4 * maxWorkgroupSize)) throw Exception("unsupported filter size");
 
@@ -305,7 +305,7 @@ template <typename T>
 void addBiasBatched(T* output, const T* input, const T* bias, int Batch, int N,
                     int C, int Nstride, ActivationFunction activation, sycl::queue &sycl_queue) {
   // process 4 elements per thread to achieve close to peak memory bandwidth
-  int maxWorkgroupSize = sycl_queue.get_device().get_info<sycl::info::device::max_work_group_size>();
+  int maxWorkgroupSize = 256;
   if (C % 4 != 0) throw Exception("unsupported filter size");
   if (C > (8 * maxWorkgroupSize)) throw Exception("unsupported filter size");
 
@@ -1620,7 +1620,7 @@ void inputPreprocessForAttentionBody(T* output, const T* input,
   // N * 64 blocks
   // (kInputPlanes + kNumPosEncodingChannels) threads
   // Each thread computes a single output element
-  int maxWorkgroupSize = sycl_queue.get_device().get_info<sycl::info::device::max_work_group_size>();
+  int maxWorkgroupSize = 256;
   sycl::range<3> gridSize = sycl::range<3>(1, 64, N);
   sycl::range<3> blockSize(1, 1, 1);
   blockSize[2] = sycl::min(input_size + encoding_size, maxWorkgroupSize);
@@ -1666,7 +1666,7 @@ void applyInputGating(T* output, const T* input, const T* mult, const T* add,
   // Block x position indicates horizontal section of area
   // Block y position indicates batch
   // Each thread computes a single output element
-  int maxWorkgroupSize = sycl_queue.get_device().get_info<sycl::info::device::max_work_group_size>();
+  int maxWorkgroupSize = 256;
   sycl::range<3> blockSize(1, 1, 1), gridSize(1, 1, 1);
   blockSize[2] = DivUp(maxWorkgroupSize, HW);
   blockSize[1] = HW;
