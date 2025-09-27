@@ -65,7 +65,7 @@ void addVectors_kernel(T* c, T* a, T* b, int size, int asize,
 template <typename T>
 void addVectors(T* c, T* a, T* b, int size, int asize, int bsize,
                 ActivationFunction activation, sycl::queue &sycl_queue) {
-  const int kBlockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int kBlockSize = 256;
   int blocks = DivUp(size, kBlockSize);
 
   sycl_queue.parallel_for(
@@ -101,7 +101,7 @@ void addVectorsHNC_NHC_kernel(T* a, T* b, int N, int H, int C,
 template <typename T>
 void addVectorsHNC_NHC(T* a, T* b, int N, int H, int C,
                        sycl::queue &sycl_queue) {
-  const int kBlockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int kBlockSize = 256;
   int blocks = DivUp(N * H * C, kBlockSize);
   sycl_queue.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) *
                                              sycl::range<3>(1, 1, kBlockSize),
@@ -418,7 +418,7 @@ template <typename T>
 void addBias_NCHW(T* c, T* a, T* b, int N, int C, int H, int W,
                   ActivationFunction activation, sycl::queue &sycl_queue) {
   int size = N * C * H * W;
-  const int kBlockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int kBlockSize = 256;
   int blocks = DivUp(size, kBlockSize);
 
   sycl_queue.parallel_for(
@@ -474,7 +474,7 @@ template <typename DstType, typename SrcType>
 void convertNCHWtoNHWC(DstType* output_tensor, const SrcType* input_tensor,
                        int Nin, int Cin, int Nout, int Cout, int H, int W, sycl::queue &sycl_queue) {
   size_t numElements = Nout * Cout * H * W;
-  const int blockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int blockSize = 256;
   int blocks = DivUp(numElements, blockSize);
   sycl_queue.parallel_for(
       sycl::nd_range<3>(
@@ -500,7 +500,7 @@ void copyTypeConverted_kernel(DstType* op, SrcType* ip, int N,
 
 template <typename DstType, typename SrcType>
 void copyTypeConverted(DstType* op, SrcType* ip, int N, sycl::queue &sycl_queue) {
-  const int kBlockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int kBlockSize = 256;
   int blocks = DivUp(N, kBlockSize);
   sycl_queue.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) *
                                              sycl::range<3>(1, 1, kBlockSize),
@@ -545,7 +545,7 @@ void batchNorm(T* output, const T* input, const T* skipInput, int N, int C,
                int H, int W, float* means, float* var_multipliers,
                ActivationFunction activation, sycl::queue &sycl_queue) {
   const int total_elements = N * C * H * W;
-  const int kBlockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int kBlockSize = 256;
   int blocks = DivUp(total_elements, kBlockSize);
 
   sycl_queue.parallel_for(
@@ -603,7 +603,7 @@ void expandPlanes_kernel_Fp32_NCHW(float* output,
 void expandPlanes_Fp32_NCHW(float* output, const uint64_t* masks,
                             const float* values, int n, sycl::queue &sycl_queue) {
   int threads = n * 8 * 8;  // Each thread writes a single element.
-  const int blockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int blockSize = 256;
   int blocks = DivUp(threads, blockSize);
   
   sycl_queue.submit([&](sycl::handler& cgh) {
@@ -660,7 +660,7 @@ void expandPlanes_kernel_Fp16_NHWC(sycl::half* output, const uint64_t* masks,
 void expandPlanes_Fp16_NHWC(sycl::half* output, const uint64_t* masks,
                             const float* values, int n, sycl::queue &sycl_queue) {
   int threads = n * 8 * 8;  // Each thread writes a single element.
-  const int kBlockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int kBlockSize = 256;
   int blocks = DivUp(threads, kBlockSize);
   {
     
@@ -718,7 +718,7 @@ void expandPlanes_kernel_Fp16_NCHW(sycl::half* output, const uint64_t* masks,
 void expandPlanes_Fp16_NCHW(sycl::half* output, const uint64_t* masks,
                             const float* values, int n, sycl::queue &sycl_queue) {
   int threads = n * 8 * 8;  // each thread writes a single element
-  const int blockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int blockSize = 256;
   int blocks = DivUp(threads, blockSize);
   {
     
@@ -952,7 +952,7 @@ void globalScale(int N, int C, T* output, const T* input, const T* scaleBias,
   const bool fp16 = std::is_same<sycl::half, T>::value;
 
   // Each thread writes one output.
-  const int kBlockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int kBlockSize = 256;
   const int kBlocks = DivUp(N * 8 * 8 * C, kBlockSize);
 
   if (nhwc) {
@@ -1004,7 +1004,7 @@ void PolicyMap(int N, T* output, const T* input, const short* indices,
                int inputSize, int usedSize, int outputSize, sycl::queue &sycl_queue) {
   // Each thread processes one input element
   // Only some of the threads (with valid mapping) write output
-  const int kBlockSize = DeviceCapabilities::GetOptimalBlockSize();
+  const int kBlockSize = 256;
   const int kBlocks = DivUp(N * usedSize, kBlockSize);
 
   sycl_queue.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, kBlocks) *
@@ -1214,7 +1214,7 @@ template <typename T>
 void Softmax(int N, int C, T* output, const T* input, const T* input2, sycl::queue &sycl_queue) {
   if (C == 64) {
     int size = N * 32;  // Total no of threads needed
-    const int kBlockSize = DeviceCapabilities::GetOptimalBlockSize();
+    const int kBlockSize = 256;
     int blocks = DivUp(size, kBlockSize);
     {
       
