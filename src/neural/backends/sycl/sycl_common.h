@@ -59,5 +59,46 @@ void CublasError(int status, const char* file, const int& line);
 
 inline int DivUp(int a, int b) { return (a + b - 1) / b; }
 
+// Device capability storage
+struct DeviceCapabilities {
+private:
+  static size_t max_workgroup_size_;
+  static bool initialized_;
+
+public:
+  static void Initialize(const sycl::queue& queue) {
+    if (!initialized_) {
+      max_workgroup_size_ = queue.get_device().get_info<sycl::info::device::max_work_group_size>();
+      initialized_ = true;
+    }
+  }
+  
+  static size_t GetMaxWorkgroupSize() {
+    if (!initialized_) {
+      throw Exception("DeviceCapabilities not initialized");
+    }
+    return max_workgroup_size_;
+  }
+  
+  static int GetOptimalBlockSize() {
+    size_t max_size = GetMaxWorkgroupSize();
+    // Use the largest power of 2 that doesn't exceed max_workgroup_size
+    // Common values are 64, 128, 256, 512, 1024, but cap at device limit
+    int optimal = 256; // Default fallback
+    if (max_size >= 1024) optimal = 1024;
+    else if (max_size >= 512) optimal = 512;
+    else if (max_size >= 256) optimal = 256;
+    else if (max_size >= 128) optimal = 128;
+    else if (max_size >= 64) optimal = 64;
+    else optimal = static_cast<int>(max_size);
+    
+    return std::min(optimal, static_cast<int>(max_size));
+  }
+};
+
+// Declaration of static members
+inline size_t DeviceCapabilities::max_workgroup_size_ = 0;
+inline bool DeviceCapabilities::initialized_ = false;
+
 }  // namespace sycldnn_backend
 }  // namespace lczero
