@@ -34,7 +34,6 @@ namespace lczero {
 namespace sycldnn_backend {
 namespace {
 constexpr int kInputPlanes = 112;
-constexpr int kOpInpTransformBlockSize = 32;  // Can be made dynamic later if needed
 }  // namespace
 
 /////////////////////////////////////////////////////////////////////////////
