@@ -907,7 +907,6 @@ class SyclNetwork : public Network {
       if (head_offset_pointers_)
           sycl::free(head_offset_pointers_, *sycl_queue_);
       //cublas_ = nullptr;
-      DeviceCapabilities::ClearCache();
     }
   }
 
