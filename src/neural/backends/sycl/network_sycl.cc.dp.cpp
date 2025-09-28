@@ -246,7 +246,7 @@ class SyclNetwork : public Network {
 
     showDeviceInfo(*sycl_queue_);
     // Initialize capabilities
-    int maxWorkgroupSize = = DeviceCapabilities::Init(*sycl_queue_);
+    int maxWorkgroupSize = DeviceCapabilities::Init(*sycl_queue_);
     CERR << "Maximum workgroup size: " << maxWorkgroupSize;
 
     l2_cache_size_ =  sycl_queue_->get_device().get_info<sycl::info::device::local_mem_size>();
