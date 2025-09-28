@@ -67,21 +67,26 @@ struct DeviceCapabilities {
         int max_workgroup_size;
     };
     
-    static int GetMaxWorkgroupSize(const sycl::queue& queue) {
+    static int Init(const sycl::queue& queue) {
         const auto& device = queue.get_device();
         std::lock_guard<std::mutex> lock(cache_mutex_);
         
-        auto it = device_cache_.find(device);
-        if (it != device_cache_.end()) {
-            return it->second.max_workgroup_size;
-        }
-        
-        // Cache miss - query device and store
         DeviceInfo info;
         info.max_workgroup_size = device.get_info<sycl::info::device::max_work_group_size>();
         device_cache_[device] = info;
         
         return info.max_workgroup_size;
+    }
+
+    static int GetMaxWorkgroupSize(const sycl::queue& queue) {
+        const auto& device = queue.get_device();
+        auto it = device_cache_.find(device);
+        if (it != device_cache_.end()) {
+            // Cache hit.
+            return it->second.max_workgroup_size;
+        }
+        // Cache miss.
+        return Init(queue);
     }
     
     // Clear cache if needed
