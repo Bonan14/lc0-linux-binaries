@@ -34,8 +34,7 @@ jobs:
           echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt-get update
           sudo apt-get install -y \
-            intel-oneapi-compiler-dpcpp-cpp-2025.2 \
-            intel-oneapi-mkl-devel-2025.2 \
+            intel-oneapi-base-toolkit-2025.2
             intel-opencl-icd \
             libtbbmalloc2 \
             ocl-icd-opencl-dev
@@ -89,6 +88,7 @@ jobs:
           path: |
             build/lc0
             build/T79.pb.gz
+
 
 
 
