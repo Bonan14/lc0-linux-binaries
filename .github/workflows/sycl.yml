@@ -47,7 +47,6 @@ jobs:
             echo "Error: icpx compiler not found!"
             exit 1
           fi
-          $ICPX --version
       - name: Remove Build Directory
         run: |
           echo "Cleaning old build..."
@@ -87,3 +86,4 @@ jobs:
           path: |
             build/lc0
             build/T79.pb.gz
+
