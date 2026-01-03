@@ -57,11 +57,15 @@ jobs:
           export RANLIB=xilib
           # Note: The AR path in oneAPI is specific; often it is 'llvm-ar' 
           # but sourcing setvars.sh usually handles the underlying toolchain.
+          # Tell icpx to use the lld linker
+          export LDFLAGS="-fuse-ld=lld"
           
           meson setup --buildtype release build \
             -Dsycl=l0 \
             -Dgtest=false \
             -Dnative_arch=false \
+            -Db_lto=true \
+            -Dcpp_link_args="-fuse-ld=lld" \
             --clearcache
             
           ninja -C build -v
@@ -85,6 +89,7 @@ jobs:
           path: |
             build/lc0
             build/T79.pb.gz
+
 
 
 
