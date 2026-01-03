@@ -42,11 +42,12 @@ jobs:
             libtbbmalloc2 \
             opencl-headers \
             ocl-icd-opencl-dev
-          export ICPX=/opt/intel/oneapi/compiler/2025.2/bin/icpx
+          export ICPX=/opt/intel/oneapi/compiler/latest/bin/icpx
           if ! $ICPX --version; then
             echo "Error: icpx compiler not found!"
             exit 1
           fi
+          $ICPX --version
       - name: Remove Build Directory
         run: |
           echo "Cleaning old build..."
@@ -86,4 +87,5 @@ jobs:
           path: |
             build/lc0
             build/T79.pb.gz
+
 
